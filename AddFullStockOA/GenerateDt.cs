@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using AddFullStockOA.WebReference;
 
 namespace AddFullStockOA
 {
@@ -8,7 +9,7 @@ namespace AddFullStockOA
     {
         SearchDt searchDt=new SearchDt();
         Tempdt tempdt=new Tempdt();
-        
+       
         /// <summary>
         /// 获取相关信息,并将K3信息通过OA接口传输至OA,最后达到创建新流程目的
         /// </summary>
@@ -48,9 +49,9 @@ namespace AddFullStockOA
                 //将以上收集的信息插入至oatempdt内
                 oatempdt.Merge(InsertDtIntoTemp(oatempdt,noticeDt,oaDt,custDt,receivebillDt,receiveable));
 
-                //todo:将oatempdt数据作为OA接口进行输出,并最后执行OA API方法
-                CreateOaWorkFlow(Convert.ToInt32(oaDt.Rows[0][0]),oatempdt);
-
+                //将oatempdt数据作为OA接口进行输出,并最后执行OA API方法
+                var resultid = CreateOaWorkFlow(Convert.ToInt32(oaDt.Rows[0][0]),oatempdt);
+                result = Convert.ToInt32(resultid) > 0 ? "Finish" : "Error";
             }
             catch (Exception ex)
             {
@@ -112,11 +113,54 @@ namespace AddFullStockOA
         /// <param name="createid">用户ID;创建流程时必需</param>
         /// <param name="resultdt"></param>
         /// <returns></returns>
-        private int CreateOaWorkFlow(int createid,DataTable resultdt)
+        private string CreateOaWorkFlow(int createid,DataTable resultdt)
         {
-            var result = 0;
+            var result = string.Empty;
 
+            var workflow = new WorkflowService();
             
+            WorkflowRequestInfo workflowRequestInfo = new WorkflowRequestInfo();
+            WorkflowBaseInfo baseInfo = new WorkflowBaseInfo();
+
+            //设置工作流ID(重)
+            baseInfo.workflowId = "68";
+
+            //设置如能否修改 查询等基础信息
+            workflowRequestInfo.canView = true;
+            workflowRequestInfo.canEdit = true;
+            workflowRequestInfo.requestLevel = "0";
+            workflowRequestInfo.creatorId = Convert.ToString(createid);  //设置创建者ID(重要:创建流程时必须填)
+
+            workflowRequestInfo.workflowBaseInfo = baseInfo;
+
+            //主表设置
+            WorkflowMainTableInfo workflowMainTableInfo=new WorkflowMainTableInfo();
+            WorkflowRequestTableRecord[] workflowRequestTableRecords=new WorkflowRequestTableRecord[1]; //设置主表字段有一条记录
+            WorkflowRequestTableField[] workflowtabFields=new WorkflowRequestTableField[23];  //设置主表有两个字段
+
+            //循环设置各列字段的相关信息
+            for (var i = 0; i < resultdt.Columns.Count; i++)
+            {
+                workflowtabFields[i] = new WorkflowRequestTableField();
+                workflowtabFields[i].fieldName = resultdt.Columns[i].ColumnName;  //字段名称
+                workflowtabFields[i].fieldValue = Convert.ToString(resultdt.Columns[i]);  //字段值
+                workflowtabFields[i].view = true;  //能否查阅
+                //除‘销售订单号’(11)可以修改外,其它都不能修改
+                workflowtabFields[i].edit = i == 11;
+            }
+
+            //将workflowtableFields所设置的字段加载到workflowRequestTableRecords内
+            workflowRequestTableRecords[0] = new WorkflowRequestTableRecord();
+            workflowRequestTableRecords[0].workflowRequestTableFields = workflowtabFields;
+
+            //然后将workflowRequestTableRecords加载到workflowMainTableInfo.requestRecords内
+            workflowMainTableInfo.requestRecords = workflowRequestTableRecords;
+
+            //最后将workflowMainTableInfo加载到workflowRequestInfo.workflowMainTableInfo内
+            workflowRequestInfo.workflowMainTableInfo = workflowMainTableInfo;
+
+            //执行doCreateWorkflowRequest()方法,若返回值>0 就成功;反之,出现异常
+            result = workflow.doCreateWorkflowRequest(workflowRequestInfo, createid);
 
             return result;
         }
