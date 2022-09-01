@@ -75,10 +75,10 @@ namespace AddFullStockOA
         /// </summary>
         /// <param name="custid"></param>
         /// <returns></returns>
-        public DataTable SearchReceivableInfo(int custid)
+        public decimal SearchReceivableInfo(int custid)
         {
-            var dt = UseSqlSearchIntoDt(0, sqlList.SearchReceivableInfo(custid));
-            return dt;
+            var result = Convert.ToDecimal(UseSqlSearchIntoDt(0, sqlList.SearchReceivableInfo(custid)).Rows[0][0]);
+            return result;
         }
 
         /// <summary>

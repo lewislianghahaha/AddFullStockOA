@@ -34,11 +34,27 @@ namespace AddFullStockOA
                     FROM dbo.T_SAL_DELIVERYNOTICE A
                     INNER JOIN dbo.T_SAL_DELIVERYNOTICEENTRY_F B ON A.FID=B.FID
                     WHERE a.FDOCUMENTSTATUS='C'    --需为已审核 
-                    AND A.FBILLNO='{orderno}'--'FHTZD160918'
+                    AND A.FBILLNO='{orderno}'      --'FHTZD160918'
                     GROUP BY A.FCUSTOMERID,A.FBILLNO,A.F_YTC_TEXT4,A.F_YTC_DECIMAL
 			                    ,A.F_YTC_INTEGER,A.F_YTC_DECIMAL2,A.F_YTC_INTEGER1)X
                   ";
 
+            return _result;
+        }
+
+        /// <summary>
+        /// 根据用户名称获取OA-用户ID及部门ID信息
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        public string SearchOaInfo(string username)
+        {
+            _result = $@"
+                            SELECT A.ID 用户ID,A.lastname 名称,B.id 部门ID --,B.departmentmark 部门 
+                            FROM dbo.HrmResource A
+                            INNER JOIN dbo.HrmDepartment B ON A.departmentid=B.id
+                            WHERE A.lastname='{username}' --'梁嘉杰'--ID='249'
+                        ";
             return _result;
         }
 
@@ -74,7 +90,7 @@ namespace AddFullStockOA
                             SELECT A.FID,a.FDATE,A.FREALRECAMOUNTFOR 实收金额
                             INTO #TEMP0
                             FROM dbo.T_AR_RECEIVEBILL A
-                            WHERE A.FCONTACTUNIT='{custid}'--'137411'    --以客户.FCUSTID为条件
+                            WHERE A.FCONTACTUNIT='{custid}'--'137411'    --以客户ID为条件
                             ORDER BY A.FDATE DESC
 
                             SELECT TOP 1 A.FDATE 最后一次收款时间,A.实收金额 最后一次收款金额
@@ -114,22 +130,5 @@ namespace AddFullStockOA
                         ";
             return _result;
         }
-
-        /// <summary>
-        /// 根据用户名称获取OA-用户ID及部门ID信息
-        /// </summary>
-        /// <param name="username"></param>
-        /// <returns></returns>
-        public string SearchOaInfo(string username)
-        {
-            _result = $@"
-                            SELECT A.ID,A.lastname 名称,B.id--,B.departmentmark 部门 
-                            FROM dbo.HrmResource A
-                            INNER JOIN dbo.HrmDepartment B ON A.departmentid=B.id
-                            WHERE A.lastname='{username}' --'梁嘉杰'--ID='249'
-                        ";
-            return _result;
-        }
-
     }
 }
