@@ -48,7 +48,7 @@ namespace AddFullStockOA
                         dc.ColumnName = "khmc";
                         dc.DataType = Type.GetType("System.String");
                         break;
-                    //当天信用额度(元)
+                    //当前信用额度(元)
                     case 6:
                         dc.ColumnName = "dqxyedy";
                         dc.DataType = Type.GetType("System.Decimal"); 

@@ -18,6 +18,9 @@ namespace AddFullStockOA
         public string GetMessageIntoOa(string orderno,string username)
         {
             var result = "Finish";
+            var custDt = new DataTable();            //收集'客户'记录表 
+            var receivebillDt = new DataTable();    //收集‘收款单’记录表
+            decimal receiveable = 0;               //收集‘应收单’记录
 
             try
             {
@@ -30,14 +33,23 @@ namespace AddFullStockOA
                 //根据username获取OA-人员ID 及 部门ID
                 var oaDt = searchDt.SearchOaInfo(username).Copy();
 
-                //todo:根据客户
+                //根据noticeDt中的custid获取‘客户’信息
+                if (noticeDt.Rows.Count > 0)
+                    custDt = searchDt.SearchCustomerInfo(Convert.ToInt32(noticeDt.Rows[0][0])).Copy();
 
-                //todo:
+                //根据noticeDt中的custid获取‘收款单’信息
+                if (noticeDt.Rows.Count > 0)
+                    receivebillDt = searchDt.SearchReciveBillInfo(Convert.ToInt32(noticeDt.Rows[0][0])).Copy();
 
-                //todo:
+                //根据noticeDt中的custid获取'应收单'信息
+                if (noticeDt.Rows.Count > 0)
+                    receiveable = searchDt.SearchReceivableInfo(Convert.ToInt32(noticeDt.Rows[0][0]));
 
-                //todo:
+                //将以上收集的信息插入至oatempdt内
+                oatempdt.Merge(InsertDtIntoTemp(oatempdt,noticeDt,oaDt,custDt,receivebillDt,receiveable));
 
+                //todo:将oatempdt数据作为OA接口进行输出,并最后执行OA API方法
+                CreateOaWorkFlow(Convert.ToInt32(oaDt.Rows[0][0]),oatempdt);
 
             }
             catch (Exception ex)
@@ -49,12 +61,65 @@ namespace AddFullStockOA
         }
 
 
-        private DataTable InsertDtIntoTemp()
+        /// <summary>
+        /// 将相关记录插入至临时表内
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="noticedt">发货通知单临时表</param>
+        /// <param name="oadt">OA临时表</param>
+        /// <param name="custdt">客户临时表</param>
+        /// <param name="receivebillDt">收款单临时表</param>
+        /// <param name="receiveable">应收单临时表</param>
+        /// <returns></returns>
+        private DataTable InsertDtIntoTemp(DataTable dt,DataTable noticedt,DataTable oadt,DataTable custdt, DataTable receivebillDt, decimal receiveable)
         {
-            
+            //将相关值插入至tempdt表内
+            var newrow = dt.NewRow();
+            newrow[0] = oadt.Rows.Count > 0 ? Convert.ToInt32(oadt.Rows[0][0]) : 0;                   //申请人   --来源:OA临时表
+            newrow[1] = oadt.Rows.Count > 0 ? Convert.ToString(DateTime.Now.Date) : "";               //申请日期 --来源:OA临时表
+            newrow[2] = oadt.Rows.Count > 0 ? Convert.ToInt32(oadt.Rows[0][2]) : 0;                   //申请部门  --来源:OA临时表
+            newrow[3] = oadt.Rows.Count > 0 ? Convert.ToInt32(oadt.Rows[0][2]) : 0;                   //岗位      --来源:OA临时表
+
+            newrow[4] = custdt.Rows.Count > 0 ? Convert.ToString(custdt.Rows[0][1]) : "";             //客户代码  --来源:custdt
+            newrow[5] = custdt.Rows.Count > 0 ? Convert.ToString(custdt.Rows[0][2]) : "";             //客户名称  --来源:custdt
+            newrow[6] = noticedt.Rows.Count > 0 ? Convert.ToDecimal(noticedt.Rows[0][3]) : 0;         //当前信用额度(元) --来源:noticedt *
+            newrow[7] = custdt.Rows.Count > 0 ? Convert.ToString(custdt.Rows[0][3]) : "";             //经销商名称(营业执照为准) --来源:custdt
+            newrow[8] = custdt.Rows.Count > 0 ? Convert.ToString(custdt.Rows[0][4]) : "";             //法人姓名 --来源:custdt
+            newrow[9] = custdt.Rows.Count > 0 ? Convert.ToString(custdt.Rows[0][5]) : "";             //开始合作时间 --来源:custdt
+            newrow[10] = noticedt.Rows.Count > 0 ? Convert.ToString(noticedt.Rows[0][1]) : "";        //K3出库单号 --来源:noticedt *
+            newrow[11] = noticedt.Rows.Count > 0 ? Convert.ToString(noticedt.Rows[0][2]) : "";        //销售订单号  --来源:noticedt *
+            newrow[12] = custdt.Rows.Count > 0 ? Convert.ToString(custdt.Rows[0][6]) : "";            //经营区域 --来源:custdt
+            newrow[13] = custdt.Rows.Count > 0 ? Convert.ToInt32(custdt.Rows[0][7]) : 0;              //币别     --来源:custdt
+            newrow[14] = receiveable; //月均销售额(元)  --来源:receiveable
+            newrow[15] = noticedt.Rows.Count > 0 ? Convert.ToDecimal(noticedt.Rows[0][4]) : 0;        //信用周期(天)    --来源:noticedt *
+            newrow[16] = custdt.Rows.Count > 0 ? Convert.ToString(custdt.Rows[0][8]) : "";            //收款条件  --来源:custdt
+            newrow[17] = noticedt.Rows.Count > 0 ? Convert.ToDecimal(noticedt.Rows[0][5]) : 0;        //超额欠款(元)    --来源:noticedt *
+            newrow[18] = noticedt.Rows.Count > 0 ? Convert.ToString(noticedt.Rows[0][6]) : "";        //超期天数(天)    --来源:noticedt *
+
+            newrow[19] = receivebillDt.Rows.Count > 0 ? Convert.ToDecimal(receivebillDt.Rows[0][1]) : 0;            //最后一次收款金额  --来源:receivebillDt
+            newrow[20] = receivebillDt.Rows.Count > 0 ? Convert.ToString(receivebillDt.Rows[0][0]) : "";            //最后一次收款时间  --来源:receivebillDt
+
+            newrow[21] = noticedt.Rows.Count > 0 ? Convert.ToDecimal(noticedt.Rows[0][7]) : 0;         //当天申请出货金额(元) --来源:noticedt *
+            newrow[22] = noticedt.Rows.Count > 0 ? Convert.ToDecimal(noticedt.Rows[0][8]) : 0;         //出货后超出信用额度欠款(元) --来源:noticedt *
+
+            dt.Rows.Add(newrow);
+            return dt;
         }
 
+        /// <summary>
+        /// 根据获取的临时表记录,并利用OA API创建流程接口,创建流程
+        /// </summary>
+        /// <param name="createid">用户ID;创建流程时必需</param>
+        /// <param name="resultdt"></param>
+        /// <returns></returns>
+        private int CreateOaWorkFlow(int createid,DataTable resultdt)
+        {
+            var result = 0;
 
+            
+
+            return result;
+        }
 
     }
 }

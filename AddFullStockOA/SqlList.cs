@@ -29,7 +29,7 @@ namespace AddFullStockOA
 			                    ,A.F_YTC_INTEGER [信用周期(天)]
 			                    ,A.F_YTC_DECIMAL2 [超额欠款(元)]
 			                    ,A.F_YTC_INTEGER1 [超期天数(天)]
-			                    ,SUM(B.FALLAMOUNT_LC) 当天申请出货金额
+			                    ,ISNULL(SUM(B.FALLAMOUNT_LC),0) 当天申请出货金额
 
                     FROM dbo.T_SAL_DELIVERYNOTICE A
                     INNER JOIN dbo.T_SAL_DELIVERYNOTICEENTRY_F B ON A.FID=B.FID
@@ -120,7 +120,7 @@ namespace AddFullStockOA
 	                            SET @EDT=CONVERT(VARCHAR(10),GETDATE(),23)                         --当天日期
 	                            SET @MON=MONTH(GETDATE())                                          --当前月份
 
-	                            SELECT  SUM(B.FALLAMOUNT)/@MON [月均销售额(元)]
+	                            SELECT  ISNULL(SUM(B.FALLAMOUNT)/@MON,0) [月均销售额(元)]
 	                            FROM dbo.T_AR_RECEIVABLE A
 	                            INNER JOIN dbo.T_AR_RECEIVABLEFIN B ON A.FID=B.FID
 	                            WHERE A.FCUSTOMERID='{custid}'--'137411'   --086.02.757.002
