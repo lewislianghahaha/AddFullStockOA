@@ -18,14 +18,14 @@ namespace AddFullStockOA
                 var orderno = docScddIds1["BillNo"].ToString();
                 var orderstatus = docScddIds1["DocumentStatus"].ToString();
                 //需检测此单据为‘审核’状态才能继续
-                //View.ShowMessage(orderstatus);
+                // View.ShowMessage(orderstatus);
                 if (orderstatus == "C")
                 {
                     //获取当前登录用户
                     var username = this.Context.UserName;
                     //执行运算并返回相关结果
                     var mesage = generateDt.GetMessageIntoOa(orderno, username);
-                    View.ShowMessage(mesage!="Finish"? $"新增超额出库异常,原因:'{mesage}'":"新增成功,请打开OA,并留意右下角的OA信息提示");
+                    View.ShowMessage(mesage != "Finish" ? $"新增超额出库异常,原因:'{mesage}'" : "新增成功,请打开OA,并留意右下角的OA信息提示");
                 }
                 else
                 {

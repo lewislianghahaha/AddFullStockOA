@@ -1,8 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Data.SqlClient;
-
-namespace AddFullStockOA
+﻿namespace AddFullStockOA
 {
     //SQL语句
     public class SqlList
