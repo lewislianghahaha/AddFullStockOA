@@ -78,6 +78,17 @@ namespace AddFullStockOA
         }
 
         /// <summary>
+        /// 检查客户是否有信用额度,有才将客户的所有相关信息插入
+        /// </summary>
+        /// <param name="custid"></param>
+        /// <returns></returns>
+        public DataTable CheckCustAccount(int custid)
+        {
+            var dt = UseSqlSearchIntoDt(0, sqlList.CheckCustAccount(custid));
+            return dt;
+        }
+
+        /// <summary>
         /// 根据用户名称获取OA-用户ID及部门ID信息
         /// OA使用
         /// </summary>

@@ -46,9 +46,10 @@
         public string SearchOaInfo(string username)
         {
             _result = $@"
-                            SELECT A.ID 用户ID,A.lastname 名称,B.id 部门ID --,B.departmentmark 部门 
+                            SELECT A.ID 用户ID,A.lastname 名称,B.id 部门ID,C.ID 岗位ID  --,B.departmentmark 部门 
                             FROM dbo.HrmResource A
                             INNER JOIN dbo.HrmDepartment B ON A.departmentid=B.id
+                            INNER JOIN HrmJobTitles C ON A.jobtitle=C.ID
                             WHERE A.lastname='{username}' --'梁嘉杰'--ID='249'
                         ";
             return _result;
@@ -123,6 +124,31 @@
 	                            AND CONVERT(VARCHAR(100),A.FDATE,23)>=@SDT
 	                            AND CONVERT(VARCHAR(100),A.FDATE,23)<=@EDT
                             END 
+                        ";
+            return _result;
+        }
+
+        /// <summary>
+        /// 检查客户是否有信用额度,有才将客户的所有相关信息插入
+        /// </summary>
+        /// <param name="custid"></param>
+        /// <returns></returns>
+        public string CheckCustAccount(int custid)
+        {
+            _result = $@"
+                            SELECT  ROW_NUMBER() OVER (ORDER BY T1.FNUMBER) id,T1.FCUSTID
+				            FROM  dbo.T_BD_CUSTOMER T1 
+				            LEFT JOIN (
+				                                SELECT   X.FCUSTOMERID, SUM(X1.FALLAMOUNT) - SUM(X1.FRECEIVEAMOUNT) YQAmount
+								                FROM      dbo.T_AR_RECEIVABLE X 
+								                INNER JOIN  dbo.T_AR_RECEIVABLEENTRY X1 ON X.FID = X1.FID 
+								                LEFT JOIN  dbo.T_CRE_CUSTARCHIVESENTRY X2 ON X.FCUSTOMERID = X2.FOBJECTID
+								                WHERE   X.FWRITTENOFFSTATUS IN ('A', 'B') 
+								            -- AND CONVERT(datetime, /*@fstrdate*/ GETDATE()) > X.FENDDATE + X2.FOVERDAYS change date:20220902
+								                GROUP BY X.FCUSTOMERID
+								            ) AS T5 ON T1.FCUSTID = T5.FCUSTOMERID 
+                            WHERE   T1.FDOCUMENTSTATUS = 'C' AND ISNULL(T5.YQAmount, 0) > 0
+                            AND T1.FCUSTID='{custid}'
                         ";
             return _result;
         }
