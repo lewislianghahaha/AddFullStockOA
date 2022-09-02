@@ -51,7 +51,7 @@ namespace AddFullStockOA
 
                 //将oatempdt数据作为OA接口进行输出,并最后执行OA API方法
                 var resultid = CreateOaWorkFlow(Convert.ToInt32(oaDt.Rows[0][0]),oatempdt);
-                result = Convert.ToInt32(resultid) > 0 ? "Finish" : "Error";
+                result = Convert.ToInt32(resultid) > 0 ? "Finish" : "生成OA-超额客户出货流程导常,请联系管理员";
             }
             catch (Exception ex)
             {
@@ -124,10 +124,12 @@ namespace AddFullStockOA
 
             //设置工作流ID(重)
             baseInfo.workflowId = "68";
+            baseInfo.workflowName = "超额客户出库";
 
             //设置如能否修改 查询等基础信息
             workflowRequestInfo.canView = true;
             workflowRequestInfo.canEdit = true;
+            workflowRequestInfo.requestName = baseInfo.workflowName;   //设置标题_此项必须添加(重)
             workflowRequestInfo.requestLevel = "0";
             workflowRequestInfo.creatorId = Convert.ToString(createid);  //设置创建者ID(重要:创建流程时必须填)
 
@@ -142,11 +144,12 @@ namespace AddFullStockOA
             for (var i = 0; i < resultdt.Columns.Count; i++)
             {
                 workflowtabFields[i] = new WorkflowRequestTableField();
-                workflowtabFields[i].fieldName = resultdt.Columns[i].ColumnName;  //字段名称
-                workflowtabFields[i].fieldValue = Convert.ToString(resultdt.Columns[i]);  //字段值
+                workflowtabFields[i].fieldName = resultdt.Columns[i].ColumnName;         //字段名称
+                workflowtabFields[i].fieldValue = Convert.ToString(resultdt.Rows[0][i]); //字段值
                 workflowtabFields[i].view = true;  //能否查阅
                 //除‘销售订单号’(11)可以修改外,其它都不能修改
-                workflowtabFields[i].edit = i == 11;
+                //workflowtabFields[i].edit = i == 11;
+                workflowtabFields[i].edit = true;   //这里必须要设置为true,可修改,不然会插入不到记录至表格
             }
 
             //将workflowtableFields所设置的字段加载到workflowRequestTableRecords内
