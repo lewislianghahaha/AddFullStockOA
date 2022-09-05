@@ -136,19 +136,23 @@
         public string CheckCustAccount(int custid)
         {
             _result = $@"
-                            SELECT  ROW_NUMBER() OVER (ORDER BY T1.FNUMBER) id,T1.FCUSTID
-				            FROM  dbo.T_BD_CUSTOMER T1 
-				            LEFT JOIN (
-				                                SELECT   X.FCUSTOMERID, SUM(X1.FALLAMOUNT) - SUM(X1.FRECEIVEAMOUNT) YQAmount
-								                FROM      dbo.T_AR_RECEIVABLE X 
-								                INNER JOIN  dbo.T_AR_RECEIVABLEENTRY X1 ON X.FID = X1.FID 
-								                LEFT JOIN  dbo.T_CRE_CUSTARCHIVESENTRY X2 ON X.FCUSTOMERID = X2.FOBJECTID
-								                WHERE   X.FWRITTENOFFSTATUS IN ('A', 'B') 
-								            -- AND CONVERT(datetime, /*@fstrdate*/ GETDATE()) > X.FENDDATE + X2.FOVERDAYS change date:20220902
-								                GROUP BY X.FCUSTOMERID
-								            ) AS T5 ON T1.FCUSTID = T5.FCUSTOMERID 
-                            WHERE   T1.FDOCUMENTSTATUS = 'C' AND ISNULL(T5.YQAmount, 0) > 0
-                            AND T1.FCUSTID='{custid}'
+                            SELECT X.ID,X.FCUSTID
+                            FROM (
+                                SELECT  ROW_NUMBER() OVER (ORDER BY T1.FNUMBER) id,T1.FCUSTID
+				                FROM  dbo.T_BD_CUSTOMER T1 
+                                LEFT JOIN dbo.T_CRE_CUSTARCHIVESENTRY T4 ON T1.FCUSTID = T4.FOBJECTID 
+				                LEFT JOIN (
+				                                    SELECT   X.FCUSTOMERID, SUM(X1.FALLAMOUNT) - SUM(X1.FRECEIVEAMOUNT) YQAmount
+								                    FROM      dbo.T_AR_RECEIVABLE X 
+								                    INNER JOIN  dbo.T_AR_RECEIVABLEENTRY X1 ON X.FID = X1.FID 
+								                    LEFT JOIN  dbo.T_CRE_CUSTARCHIVESENTRY X2 ON X.FCUSTOMERID = X2.FOBJECTID
+								                    WHERE   X.FWRITTENOFFSTATUS IN ('A', 'B') 
+								                -- AND CONVERT(datetime, /*@fstrdate*/ GETDATE()) > X.FENDDATE + X2.FOVERDAYS change date:20220902
+								                    GROUP BY X.FCUSTOMERID
+								                ) AS T5 ON T1.FCUSTID = T5.FCUSTOMERID 
+                                WHERE   T1.FDOCUMENTSTATUS = 'C' AND ISNULL(T5.YQAmount, 0) > 0
+                                )X
+                            WHERE X.FCUSTID='{custid}'
                         ";
             return _result;
         }

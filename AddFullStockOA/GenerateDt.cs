@@ -57,6 +57,7 @@ namespace AddFullStockOA
                 //将oatempdt数据作为OA接口进行输出,并最后执行OA API方法
                 var resultid = CreateOaWorkFlow(Convert.ToInt32(oaDt.Rows[0][0]),oatempdt);
                 result = Convert.ToInt32(resultid) > 0 ? "Finish" : "生成OA-超额客户出货流程导常,请联系管理员";
+               // result = Convert.ToString(oatempdt.Rows.Count);
             }
             catch (Exception ex)
             {
@@ -150,13 +151,13 @@ namespace AddFullStockOA
         {
             var result = string.Empty;
 
-            var workflow = new WorkflowService();
-            
+            WorkflowService workflow=new WorkflowService();
+
             WorkflowRequestInfo workflowRequestInfo = new WorkflowRequestInfo();
             WorkflowBaseInfo baseInfo = new WorkflowBaseInfo();
 
-            //设置工作流ID(重)
-            baseInfo.workflowId = "68";
+            //设置工作流ID_必须添加(重)
+            baseInfo.workflowId = "68";  //"129";
             baseInfo.workflowName = "超额客户出货";
 
             //设置如能否修改 查询等基础信息
@@ -164,26 +165,32 @@ namespace AddFullStockOA
             workflowRequestInfo.canEdit = true;
             workflowRequestInfo.requestName = baseInfo.workflowName;   //设置标题_此项必须添加(重)
             workflowRequestInfo.requestLevel = "0";
-            workflowRequestInfo.creatorId = Convert.ToString(createid);  //设置创建者ID(重要:创建流程时必须填)
+            workflowRequestInfo.creatorId = "249";//Convert.ToString(createid);  //设置创建者ID(重要:创建流程时必须填)
 
             workflowRequestInfo.workflowBaseInfo = baseInfo;
 
             //主表设置
-            WorkflowMainTableInfo workflowMainTableInfo=new WorkflowMainTableInfo();
-            WorkflowRequestTableRecord[] workflowRequestTableRecords=new WorkflowRequestTableRecord[1]; //设置主表字段有一条记录
-            WorkflowRequestTableField[] workflowtabFields=new WorkflowRequestTableField[23];  //设置主表有两个字段
+            WorkflowMainTableInfo workflowMainTableInfo = new WorkflowMainTableInfo();
+            WorkflowRequestTableRecord[] workflowRequestTableRecords = new WorkflowRequestTableRecord[1]; //设置主表字段有一条记录
+            WorkflowRequestTableField[] workflowtabFields = new WorkflowRequestTableField[23];  //设置主表有多少个字段
 
             //循环设置各列字段的相关信息
-            for (var i = 0; i < resultdt.Columns.Count; i++)
-            {
-                workflowtabFields[i] = new WorkflowRequestTableField();
-                workflowtabFields[i].fieldName = resultdt.Columns[i].ColumnName;         //字段名称
-                workflowtabFields[i].fieldValue = Convert.ToString(resultdt.Rows[0][i]); //字段值
-                workflowtabFields[i].view = true;  //能否查阅
-                //除‘销售订单号’(11)可以修改外,其它都不能修改
-                //workflowtabFields[i].edit = i == 11;
-                workflowtabFields[i].edit = true;   //这里必须要设置为true,可修改,不然会插入不到记录至表格
-            }
+            workflowtabFields[0] = new WorkflowRequestTableField();
+            workflowtabFields[0].fieldName = "sqr";
+            workflowtabFields[0].fieldValue = "249";
+            workflowtabFields[0].view = true;
+            workflowtabFields[0].edit = true;
+
+            //for (var i = 0; i < resultdt.Columns.Count; i++)
+            //{
+            //    workflowtabFields[i] = new WorkflowRequestTableField();
+            //    workflowtabFields[i].fieldName = resultdt.Columns[i].ColumnName;  //字段名称
+            //    workflowtabFields[i].fieldValue = Convert.ToString(resultdt.Rows[0][i]); //字段值
+            //    workflowtabFields[i].view = true;  //能否查阅
+            //    //除‘销售订单号’(11)可以修改外,其它都不能修改
+            //    //workflowtabFields[i].edit = i == 11;
+            //    workflowtabFields[i].edit = true;   //这里必须要设置为true,可修改,不然会插入不到记录至表格
+            //}
 
             //将workflowtableFields所设置的字段加载到workflowRequestTableRecords内
             workflowRequestTableRecords[0] = new WorkflowRequestTableRecord();
@@ -196,7 +203,7 @@ namespace AddFullStockOA
             workflowRequestInfo.workflowMainTableInfo = workflowMainTableInfo;
 
             //执行doCreateWorkflowRequest()方法,若返回值>0 就成功;反之,出现异常
-            result = workflow.doCreateWorkflowRequest(workflowRequestInfo, createid);
+            result = workflow.doCreateWorkflowRequest(workflowRequestInfo, 249);
 
             return result;
         }

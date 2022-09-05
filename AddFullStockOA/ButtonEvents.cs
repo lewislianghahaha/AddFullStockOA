@@ -1,5 +1,6 @@
 ﻿using Kingdee.BOS.Core.Bill.PlugIn;
 using Kingdee.BOS.Core.DynamicForm.PlugIn.Args;
+using Kingdee.BOS.Core.Msg;
 
 namespace AddFullStockOA
 {
@@ -25,6 +26,7 @@ namespace AddFullStockOA
                     var username = this.Context.UserName;
                     //执行运算并返回相关结果
                     var mesage = generateDt.GetMessageIntoOa(orderno, username);
+                    //View.ShowMessage(mesage);
                     View.ShowMessage(mesage != "Finish" ? $"新增超额出货异常,原因:'{mesage}'" : "新增成功,请打开OA,并留意右下角的OA信息提示");
                 }
                 else
